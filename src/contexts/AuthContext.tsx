@@ -31,6 +31,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (session?.user) {
         fetchProfile(session.user.id);
       } else {
+        setProfile(null);
         setLoading(false);
       }
     });
@@ -118,7 +119,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    try {
+      await supabase.auth.signOut();
+      // Explicitly clear all auth states
+      setUser(null);
+      setProfile(null);
+      setSession(null);
+    } catch (error) {
+      console.error('Error signing out:', error);
+      // Clear states even if signOut fails
+      setUser(null);
+      setProfile(null);
+      setSession(null);
+    }
   };
 
   const signInWithOAuth = async (provider: 'github' | 'google') => {

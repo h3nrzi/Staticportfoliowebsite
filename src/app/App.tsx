@@ -253,49 +253,42 @@ function Layout({ children }: { children: React.ReactNode }) {
 export default function App() {
   return (
     <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
-      <Router>
-        <ScrollToTop />
-        <AuthProvider>
+      <AuthProvider>
+        <Router>
+          <ScrollToTop />
           <Toaster position="top-right" />
           <Routes>
             {/* Auth routes without Layout */}
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
             
-            {/* Protected admin route */}
+            {/* Protected admin route with Layout */}
             <Route
               path="/admin"
               element={
                 <ProtectedRoute requireAdmin>
-                  <AdminPage />
+                  <Layout>
+                    <AdminPage />
+                  </Layout>
                 </ProtectedRoute>
               }
             />
             
             {/* Main routes with Layout */}
-            <Route
-              path="/*"
-              element={
-                <Layout>
-                  <Routes>
-                    <Route path="/" element={<HomePage />} />
-                    <Route path="/about" element={<AboutPage />} />
-                    <Route path="/projects" element={<ProjectsPage />} />
-                    <Route path="/projects/:slug" element={<ProjectDetailPage />} />
-                    <Route path="/skills" element={<SkillsPage />} />
-                    <Route path="/resume" element={<ResumePage />} />
-                    <Route path="/contact" element={<ContactPage />} />
-                    <Route path="/blog" element={<BlogPage />} />
-                    <Route path="/blog/:slug" element={<BlogDetailPage />} />
-                    <Route path="/profile" element={<ProfilePage />} />
-                    <Route path="*" element={<NotFoundPage />} />
-                  </Routes>
-                </Layout>
-              }
-            />
+            <Route path="/" element={<Layout><HomePage /></Layout>} />
+            <Route path="/about" element={<Layout><AboutPage /></Layout>} />
+            <Route path="/projects" element={<Layout><ProjectsPage /></Layout>} />
+            <Route path="/projects/:slug" element={<Layout><ProjectDetailPage /></Layout>} />
+            <Route path="/skills" element={<Layout><SkillsPage /></Layout>} />
+            <Route path="/resume" element={<Layout><ResumePage /></Layout>} />
+            <Route path="/contact" element={<Layout><ContactPage /></Layout>} />
+            <Route path="/blog" element={<Layout><BlogPage /></Layout>} />
+            <Route path="/blog/:slug" element={<Layout><BlogDetailPage /></Layout>} />
+            <Route path="/profile" element={<Layout><ProfilePage /></Layout>} />
+            <Route path="*" element={<Layout><NotFoundPage /></Layout>} />
           </Routes>
-        </AuthProvider>
-      </Router>
+        </Router>
+      </AuthProvider>
     </ThemeProvider>
   );
 }
