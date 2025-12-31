@@ -1,13 +1,12 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { isSupabaseConfigured } from '../../lib/supabase';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../components/ui/card';
 import { Alert, AlertDescription } from '../components/ui/alert';
-import { Github, Mail, Chrome, Lock, Loader2, AlertTriangle } from 'lucide-react';
+import { Mail, Lock, Github, Chrome, Loader2 } from 'lucide-react';
 import { motion } from 'motion/react';
 
 export default function LoginPage() {
@@ -62,6 +61,14 @@ export default function LoginPage() {
             <CardDescription className="text-center">
               Sign in to your account to continue
             </CardDescription>
+            {/* Demo Credentials Notice */}
+            <div className="mt-4 p-3 bg-primary/10 border border-primary/20 rounded-lg">
+              <p className="text-xs font-semibold mb-2 text-center">Demo Credentials:</p>
+              <div className="text-xs space-y-1 text-center">
+                <p><strong>Admin:</strong> admin@example.com / admin123</p>
+                <p><strong>User:</strong> john@example.com / user123</p>
+              </div>
+            </div>
           </CardHeader>
           <CardContent className="space-y-4">
             {error && (

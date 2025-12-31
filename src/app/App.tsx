@@ -36,7 +36,7 @@ function Navigation() {
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   const location = useLocation();
-  const { user, profile, signOut } = useAuth();
+  const { user, signOut } = useAuth();
 
   useEffect(() => {
     setMounted(true);
@@ -92,7 +92,7 @@ function Navigation() {
             ))}
             
             {/* Admin link if user is admin */}
-            {profile?.role === 'admin' && (
+            {user?.role === 'admin' && (
               <Link to="/admin">
                 <Button
                   variant={isActive('/admin') ? 'default' : 'ghost'}

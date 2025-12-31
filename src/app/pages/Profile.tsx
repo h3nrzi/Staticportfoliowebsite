@@ -10,11 +10,11 @@ import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar';
 import { Alert, AlertDescription } from '../components/ui/alert';
 import { Separator } from '../components/ui/separator';
 import { Loader2, Camera, Save, User as UserIcon, Mail, Calendar, Shield } from 'lucide-react';
-import { profileService } from '../../lib/supabase';
+import * as userService from '../../services/user.service';
 import { toast } from 'sonner';
 
 export default function ProfilePage() {
-  const { user, profile, loading: authLoading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
@@ -22,9 +22,9 @@ export default function ProfilePage() {
 
   // Form state
   const [formData, setFormData] = useState({
-    username: profile?.username || '',
-    display_name: profile?.display_name || profile?.full_name || '',
-    bio: profile?.bio || ''
+    username: user?.username || '',
+    display_name: user?.display_name || user?.full_name || '',
+    bio: user?.bio || ''
   });
 
   const [errors, setErrors] = useState({
@@ -47,7 +47,7 @@ export default function ProfilePage() {
     );
   }
 
-  if (!user || !profile) {
+  if (!user) {
     return (
       <div className="min-h-screen flex items-center justify-center py-20">
         <Card className="w-full max-w-md">
@@ -84,12 +84,12 @@ export default function ProfilePage() {
 
     setUploadingAvatar(true);
     try {
-      const { data: avatarUrl, error } = await profileService.uploadAvatar(user.id, file);
+      const { data: avatarUrl, error } = await userService.uploadAvatar(user.id, file);
       
       if (error) throw error;
       
       if (avatarUrl) {
-        const { error: updateError } = await profileService.updateProfile(user.id, {
+        const { error: updateError } = await userService.updateProfile(user.id, {
           avatar_url: avatarUrl
         });
 
@@ -120,9 +120,9 @@ export default function ProfilePage() {
         newErrors.username = 'Username must be at least 3 characters';
       } else if (!/^[a-zA-Z0-9_]+$/.test(formData.username)) {
         newErrors.username = 'Username can only contain letters, numbers, and underscores';
-      } else if (formData.username !== profile?.username) {
+      } else if (formData.username !== user?.username) {
         // Check if username is available
-        const { available, error } = await profileService.checkUsernameAvailable(
+        const { available, error } = await userService.checkUsernameAvailable(
           formData.username,
           user.id
         );
@@ -158,7 +158,7 @@ export default function ProfilePage() {
 
     setLoading(true);
     try {
-      const { error } = await profileService.updateProfile(user.id, formData);
+      const { error } = await userService.updateProfile(user.id, formData);
       
       if (error) throw error;
 
@@ -176,16 +176,16 @@ export default function ProfilePage() {
 
   const handleCancel = () => {
     setFormData({
-      username: profile?.username || '',
-      display_name: profile?.display_name || profile?.full_name || '',
-      bio: profile?.bio || ''
+      username: user?.username || '',
+      display_name: user?.display_name || user?.full_name || '',
+      bio: user?.bio || ''
     });
     setErrors({ username: '', display_name: '', bio: '' });
     setIsEditing(false);
   };
 
   const getInitials = () => {
-    const name = profile.display_name || profile.full_name || profile.email;
+    const name = user.display_name || user.full_name || user.email;
     return name
       .split(' ')
       .map(n => n[0])
@@ -233,7 +233,7 @@ export default function ProfilePage() {
                       className="h-32 w-32 cursor-pointer border-4 border-border"
                       onClick={handleAvatarClick}
                     >
-                      <AvatarImage src={profile.avatar_url} alt={profile.display_name || 'User'} />
+                      <AvatarImage src={user.avatar_url} alt={user.display_name || 'User'} />
                       <AvatarFallback className="text-3xl">{getInitials()}</AvatarFallback>
                     </Avatar>
                     {isEditing && (
@@ -275,7 +275,7 @@ export default function ProfilePage() {
                       Email
                     </Label>
                     <Input
-                      value={profile.email}
+                      value={user.email}
                       disabled
                       className="bg-muted"
                     />
@@ -351,13 +351,13 @@ export default function ProfilePage() {
                     <div className="flex items-center gap-2">
                       <Shield className="h-4 w-4 text-muted-foreground" />
                       <span className="text-muted-foreground">Role:</span>
-                      <span className="font-medium capitalize">{profile.role}</span>
+                      <span className="font-medium capitalize">{user.role}</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <Calendar className="h-4 w-4 text-muted-foreground" />
                       <span className="text-muted-foreground">Member since:</span>
                       <span className="font-medium">
-                        {new Date(profile.created_at).toLocaleDateString()}
+                        {new Date(user.created_at).toLocaleDateString()}
                       </span>
                     </div>
                   </div>

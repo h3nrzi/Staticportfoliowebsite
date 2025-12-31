@@ -1,3 +1,16 @@
+/**
+ * Comment Section Component
+ * 
+ * Displays and manages comments for projects and blog posts.
+ * Uses mock data through the comment service.
+ * 
+ * TODO: Backend Integration
+ * - Replace mock service with real API calls
+ * - Add real-time updates using WebSockets/SSE
+ * - Implement comment reactions
+ * - Add comment threading/replies
+ */
+
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useAuth } from '../../contexts/AuthContext';
@@ -7,18 +20,24 @@ import { Textarea } from './ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Separator } from './ui/separator';
 import { MessageSquare, Loader2, Edit2, Trash2, Send } from 'lucide-react';
-import { Comment, commentService } from '../../lib/supabase';
+import * as commentService from '../../services/comment.service';
+import * as userService from '../../services/user.service';
+import { Comment, EntityType, User } from '../../types';
 import { toast } from 'sonner';
 import { formatDistanceToNow } from 'date-fns';
 
+interface CommentWithUser extends Comment {
+  user?: User;
+}
+
 interface CommentSectionProps {
   itemId: string;
-  itemType: 'project' | 'blog';
+  itemType: EntityType;
 }
 
 export function CommentSection({ itemId, itemType }: CommentSectionProps) {
-  const { user, profile } = useAuth();
-  const [comments, setComments] = useState<Comment[]>([]);
+  const { user } = useAuth();
+  const [comments, setComments] = useState<CommentWithUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [newComment, setNewComment] = useState('');
@@ -27,25 +46,25 @@ export function CommentSection({ itemId, itemType }: CommentSectionProps) {
 
   useEffect(() => {
     loadComments();
-    
-    // Subscribe to real-time updates
-    const channel = commentService.subscribeToComments(itemId, itemType, (payload) => {
-      console.log('Comment update:', payload);
-      loadComments(); // Reload comments on any change
-    });
-
-    return () => {
-      channel.unsubscribe();
-    };
   }, [itemId, itemType]);
 
   const loadComments = async () => {
     try {
-      const { data, error } = await commentService.getComments(itemId, itemType);
+      const { data, error } = await commentService.getComments(itemType, itemId);
       if (error) throw error;
-      setComments(data || []);
+
+      // Load user data for each comment
+      const commentsWithUsers = await Promise.all(
+        (data || []).map(async (comment) => {
+          const { data: userData } = await userService.getUserProfile(comment.user_id);
+          return { ...comment, user: userData || undefined };
+        })
+      );
+
+      setComments(commentsWithUsers);
     } catch (error: any) {
       console.error('Error loading comments:', error);
+      toast.error('Failed to load comments');
     } finally {
       setLoading(false);
     }
@@ -59,8 +78,8 @@ export function CommentSection({ itemId, itemType }: CommentSectionProps) {
     try {
       const { error } = await commentService.addComment(
         user.id,
-        itemId,
         itemType,
+        itemId,
         newComment.trim()
       );
 
@@ -78,10 +97,10 @@ export function CommentSection({ itemId, itemType }: CommentSectionProps) {
   };
 
   const handleEdit = async (commentId: string) => {
-    if (!editContent.trim()) return;
+    if (!editContent.trim() || !user) return;
 
     try {
-      const { error } = await commentService.updateComment(commentId, editContent.trim());
+      const { error } = await commentService.updateComment(commentId, editContent.trim(), user.id);
       if (error) throw error;
 
       setEditingId(null);
@@ -95,10 +114,11 @@ export function CommentSection({ itemId, itemType }: CommentSectionProps) {
   };
 
   const handleDelete = async (commentId: string) => {
+    if (!user) return;
     if (!confirm('Are you sure you want to delete this comment?')) return;
 
     try {
-      const { error } = await commentService.deleteComment(commentId);
+      const { error } = await commentService.deleteComment(commentId, user.id);
       if (error) throw error;
 
       toast.success('Comment deleted successfully');
@@ -109,7 +129,7 @@ export function CommentSection({ itemId, itemType }: CommentSectionProps) {
     }
   };
 
-  const startEdit = (comment: Comment) => {
+  const startEdit = (comment: CommentWithUser) => {
     setEditingId(comment.id);
     setEditContent(comment.content);
   };
@@ -119,8 +139,7 @@ export function CommentSection({ itemId, itemType }: CommentSectionProps) {
     setEditContent('');
   };
 
-  const getInitials = (comment: Comment) => {
-    const name = comment.profile?.display_name || comment.profile?.full_name || comment.profile?.email || 'U';
+  const getInitials = (name: string) => {
     return name
       .split(' ')
       .map(n => n[0])
@@ -142,11 +161,11 @@ export function CommentSection({ itemId, itemType }: CommentSectionProps) {
         {user ? (
           <form onSubmit={handleSubmit} className="space-y-4">
             <Textarea
+              placeholder="Share your thoughts..."
               value={newComment}
               onChange={(e) => setNewComment(e.target.value)}
-              placeholder="Share your thoughts..."
-              rows={3}
               disabled={submitting}
+              rows={3}
             />
             <div className="flex justify-end">
               <Button type="submit" disabled={submitting || !newComment.trim()}>
@@ -165,100 +184,102 @@ export function CommentSection({ itemId, itemType }: CommentSectionProps) {
             </div>
           </form>
         ) : (
-          <div className="bg-muted p-4 rounded-lg text-center">
-            <p className="text-muted-foreground">Please log in to post a comment</p>
+          <div className="text-center py-4 text-muted-foreground">
+            Please <a href="/login" className="text-primary hover:underline">log in</a> to comment
           </div>
         )}
 
+        <Separator />
+
+        {/* Comments List */}
         {loading ? (
           <div className="flex justify-center py-8">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
           </div>
         ) : comments.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">
-            No comments yet. Be the first to comment!
+            <MessageSquare className="mx-auto h-12 w-12 mb-4 opacity-20" />
+            <p>No comments yet. Be the first to comment!</p>
           </div>
         ) : (
-          <div className="space-y-4">
-            <Separator />
-            <AnimatePresence mode="popLayout">
+          <div className="space-y-6">
+            <AnimatePresence>
               {comments.map((comment) => (
                 <motion.div
                   key={comment.id}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, x: -100 }}
-                  className="space-y-3"
+                  exit={{ opacity: 0, height: 0 }}
+                  className="flex gap-4"
                 >
-                  <div className="flex gap-3">
-                    <Avatar>
-                      <AvatarImage src={comment.profile?.avatar_url} />
-                      <AvatarFallback>{getInitials(comment)}</AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 space-y-2">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="font-medium">
-                            {comment.profile?.display_name || comment.profile?.full_name || 'Anonymous'}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}
-                            {comment.updated_at !== comment.created_at && ' (edited)'}
-                          </p>
-                        </div>
-                        {user?.id === comment.user_id && (
-                          <div className="flex gap-2">
-                            {editingId === comment.id ? (
-                              <>
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  onClick={cancelEdit}
-                                >
-                                  Cancel
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  onClick={() => handleEdit(comment.id)}
-                                  disabled={!editContent.trim()}
-                                >
-                                  Save
-                                </Button>
-                              </>
-                            ) : (
-                              <>
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  onClick={() => startEdit(comment)}
-                                >
-                                  <Edit2 className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  onClick={() => handleDelete(comment.id)}
-                                >
-                                  <Trash2 className="h-4 w-4 text-destructive" />
-                                </Button>
-                              </>
-                            )}
-                          </div>
-                        )}
+                  <Avatar>
+                    <AvatarImage src={comment.user?.avatar_url || undefined} />
+                    <AvatarFallback>
+                      {comment.user ? getInitials(comment.user.display_name || comment.user.full_name || comment.user.email) : '?'}
+                    </AvatarFallback>
+                  </Avatar>
+
+                  <div className="flex-1 space-y-2">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <p className="font-semibold">
+                          {comment.user?.display_name || comment.user?.full_name || 'Unknown User'}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}
+                          {comment.updated_at !== comment.created_at && ' (edited)'}
+                        </p>
                       </div>
-                      {editingId === comment.id ? (
+
+                      {user && (user.id === comment.user_id || user.role === 'admin') && (
+                        <div className="flex gap-2">
+                          {user.id === comment.user_id && editingId !== comment.id && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => startEdit(comment)}
+                            >
+                              <Edit2 className="h-4 w-4" />
+                            </Button>
+                          )}
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDelete(comment.id)}
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+
+                    {editingId === comment.id ? (
+                      <div className="space-y-2">
                         <Textarea
                           value={editContent}
                           onChange={(e) => setEditContent(e.target.value)}
                           rows={3}
-                          className="mt-2"
                         />
-                      ) : (
-                        <p className="text-sm whitespace-pre-wrap">{comment.content}</p>
-                      )}
-                    </div>
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            onClick={() => handleEdit(comment.id)}
+                          >
+                            Save
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={cancelEdit}
+                          >
+                            Cancel
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="text-sm whitespace-pre-wrap">{comment.content}</p>
+                    )}
                   </div>
-                  <Separator />
                 </motion.div>
               ))}
             </AnimatePresence>

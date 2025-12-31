@@ -7,7 +7,7 @@ import { Shield, Users, Settings, Activity } from 'lucide-react';
 import { motion } from 'motion/react';
 
 export default function AdminPage() {
-  const { user, profile, signOut } = useAuth();
+  const { user, signOut } = useAuth();
 
   const stats = [
     {
@@ -49,7 +49,7 @@ export default function AdminPage() {
             <div>
               <h1 className="text-4xl font-bold mb-2">Admin Dashboard</h1>
               <p className="text-muted-foreground">
-                Welcome back, {profile?.full_name || user?.email}
+                Welcome back, {user?.email}
               </p>
             </div>
             <div className="flex items-center gap-4">
@@ -162,7 +162,7 @@ export default function AdminPage() {
                 </div>
                 <div className="flex justify-between py-2 border-b">
                   <span className="text-muted-foreground">Role:</span>
-                  <Badge variant="default">{profile?.role}</Badge>
+                  <Badge variant="default">Admin</Badge>
                 </div>
                 <div className="flex justify-between py-2 border-b">
                   <span className="text-muted-foreground">User ID:</span>
@@ -171,8 +171,8 @@ export default function AdminPage() {
                 <div className="flex justify-between py-2">
                   <span className="text-muted-foreground">Joined:</span>
                   <span className="text-sm">
-                    {profile?.created_at
-                      ? new Date(profile.created_at).toLocaleDateString()
+                    {user?.created_at
+                      ? new Date(user.created_at).toLocaleDateString()
                       : 'N/A'}
                   </span>
                 </div>
