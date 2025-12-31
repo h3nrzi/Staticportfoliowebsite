@@ -4,6 +4,7 @@ import { ThemeProvider } from './components/theme-provider';
 import { useTheme } from 'next-themes';
 import { Button } from './components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from './components/ui/sheet';
+import { Toaster } from './components/ui/sonner';
 import { Menu, Moon, Sun, Github, Linkedin, Twitter, Mail, Home as HomeIcon, User, Briefcase, Code, FileText, MessageSquare, BookOpen } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -68,14 +69,16 @@ function Navigation() {
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-1">
             {navItems.map((item) => (
-              <Link key={item.path} to={item.path}>
-                <Button
-                  variant={isActive(item.path) ? 'default' : 'ghost'}
-                  className={isActive(item.path) ? 'bg-primary text-primary-foreground' : ''}
-                >
+              <Button
+                key={item.path}
+                asChild
+                variant={isActive(item.path) ? 'default' : 'ghost'}
+                className={isActive(item.path) ? 'bg-primary text-primary-foreground' : ''}
+              >
+                <Link to={item.path}>
                   {item.label}
-                </Button>
-              </Link>
+                </Link>
+              </Button>
             ))}
           </div>
 
@@ -214,6 +217,7 @@ export default function App() {
             <Route path="*" element={<NotFoundPage />} />
           </Routes>
         </Layout>
+        <Toaster />
       </Router>
     </ThemeProvider>
   );
