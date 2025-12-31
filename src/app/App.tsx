@@ -4,7 +4,6 @@ import { ThemeProvider } from './components/theme-provider';
 import { useTheme } from 'next-themes';
 import { Button } from './components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from './components/ui/sheet';
-import { Toaster } from './components/ui/sonner';
 import { Menu, Moon, Sun, Github, Linkedin, Twitter, Mail, Home as HomeIcon, User, Briefcase, Code, FileText, MessageSquare, BookOpen } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -217,7 +216,6 @@ export default function App() {
             <Route path="*" element={<NotFoundPage />} />
           </Routes>
         </Layout>
-        <Toaster />
       </Router>
     </ThemeProvider>
   );

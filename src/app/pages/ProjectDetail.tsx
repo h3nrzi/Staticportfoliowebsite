@@ -7,8 +7,6 @@ import { Card, CardContent } from '../components/ui/card';
 import { Separator } from '../components/ui/separator';
 import { ArrowLeft, ExternalLink, Github, CheckCircle2, TrendingUp } from 'lucide-react';
 import { getProjectBySlug } from '../../data/projects';
-import ProjectStats from '../components/ProjectStats';
-import ProjectComments from '../components/ProjectComments';
 
 export default function ProjectDetailPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -257,16 +255,6 @@ export default function ProjectDetailPage() {
               </Card>
             </motion.div>
           </div>
-        </div>
-
-        {/* Project Stats - Full width below content */}
-        <div className="mt-12">
-          <ProjectStats projectSlug={slug || ''} />
-        </div>
-
-        {/* Project Comments - Full width */}
-        <div className="mt-12">
-          <ProjectComments projectSlug={slug || ''} />
         </div>
       </div>
     </div>
