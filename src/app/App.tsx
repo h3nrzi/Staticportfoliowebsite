@@ -4,8 +4,9 @@ import { ThemeProvider } from './components/theme-provider';
 import { useTheme } from 'next-themes';
 import { Button } from './components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from './components/ui/sheet';
-import { Menu, Moon, Sun, Github, Linkedin, Twitter, Mail, Home as HomeIcon, User, Briefcase, Code, FileText, MessageSquare, BookOpen, Shield, LogIn, LogOut } from 'lucide-react';
+import { Menu, Moon, Sun, Github, Linkedin, Twitter, Mail, Home as HomeIcon, User, Briefcase, Code, FileText, MessageSquare, BookOpen, Shield, LogIn, LogOut, UserCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { Toaster } from './components/ui/sonner';
 
 // Import auth
 import { AuthProvider, useAuth } from '../contexts/AuthContext';
@@ -20,7 +21,9 @@ import SkillsPage from './pages/Skills';
 import ResumePage from './pages/Resume';
 import ContactPage from './pages/Contact';
 import BlogPage from './pages/Blog';
+import BlogDetailPage from './pages/BlogDetail';
 import NotFoundPage from './pages/NotFound';
+import ProfilePage from './pages/Profile';
 
 // Import auth pages
 import LoginPage from './pages/Login';
@@ -97,6 +100,19 @@ function Navigation() {
                 >
                   <Shield className="mr-2 h-4 w-4" />
                   Admin
+                </Button>
+              </Link>
+            )}
+            
+            {/* Profile link if user is logged in */}
+            {user && (
+              <Link to="/profile">
+                <Button
+                  variant={isActive('/profile') ? 'default' : 'ghost'}
+                  className={isActive('/profile') ? 'bg-primary text-primary-foreground' : ''}
+                >
+                  <UserCircle className="mr-2 h-4 w-4" />
+                  Profile
                 </Button>
               </Link>
             )}
@@ -240,6 +256,7 @@ export default function App() {
       <Router>
         <ScrollToTop />
         <AuthProvider>
+          <Toaster position="top-right" />
           <Routes>
             {/* Auth routes without Layout */}
             <Route path="/login" element={<LoginPage />} />
@@ -269,6 +286,8 @@ export default function App() {
                     <Route path="/resume" element={<ResumePage />} />
                     <Route path="/contact" element={<ContactPage />} />
                     <Route path="/blog" element={<BlogPage />} />
+                    <Route path="/blog/:slug" element={<BlogDetailPage />} />
+                    <Route path="/profile" element={<ProfilePage />} />
                     <Route path="*" element={<NotFoundPage />} />
                   </Routes>
                 </Layout>

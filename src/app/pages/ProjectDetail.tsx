@@ -7,6 +7,8 @@ import { Card, CardContent } from '../components/ui/card';
 import { Separator } from '../components/ui/separator';
 import { ArrowLeft, ExternalLink, Github, CheckCircle2, TrendingUp } from 'lucide-react';
 import { getProjectBySlug } from '../../data/projects';
+import { CommentSection } from '../components/CommentSection';
+import { LikeButton } from '../components/LikeButton';
 
 export default function ProjectDetailPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -183,6 +185,29 @@ export default function ProjectDetailPage() {
                   </motion.div>
                 ))}
               </div>
+            </motion.section>
+
+            <Separator />
+
+            {/* Interactions */}
+            <motion.section
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.7 }}
+              className="flex justify-center"
+            >
+              <LikeButton itemId={project.id} itemType="project" />
+            </motion.section>
+
+            <Separator />
+
+            {/* Comments */}
+            <motion.section
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.8 }}
+            >
+              <CommentSection itemId={project.id} itemType="project" />
             </motion.section>
           </div>
 
