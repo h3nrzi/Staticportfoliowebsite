@@ -4,8 +4,12 @@ import { ThemeProvider } from './components/theme-provider';
 import { useTheme } from 'next-themes';
 import { Button } from './components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from './components/ui/sheet';
-import { Menu, Moon, Sun, Github, Linkedin, Twitter, Mail, Home as HomeIcon, User, Briefcase, Code, FileText, MessageSquare, BookOpen } from 'lucide-react';
+import { Menu, Moon, Sun, Github, Linkedin, Twitter, Mail, Home as HomeIcon, User, Briefcase, Code, FileText, MessageSquare, BookOpen, Shield, LogIn, LogOut } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+
+// Import auth
+import { AuthProvider, useAuth } from '../contexts/AuthContext';
+import { ProtectedRoute } from '../components/ProtectedRoute';
 
 // Import pages (we'll create these)
 import HomePage from './pages/Home';
@@ -18,12 +22,18 @@ import ContactPage from './pages/Contact';
 import BlogPage from './pages/Blog';
 import NotFoundPage from './pages/NotFound';
 
+// Import auth pages
+import LoginPage from './pages/Login';
+import RegisterPage from './pages/Register';
+import AdminPage from './pages/Admin';
+
 // Navigation component
 function Navigation() {
   const [isOpen, setIsOpen] = useState(false);
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   const location = useLocation();
+  const { user, profile, signOut } = useAuth();
 
   useEffect(() => {
     setMounted(true);
@@ -68,17 +78,43 @@ function Navigation() {
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-1">
             {navItems.map((item) => (
-              <Button
-                key={item.path}
-                asChild
-                variant={isActive(item.path) ? 'default' : 'ghost'}
-                className={isActive(item.path) ? 'bg-primary text-primary-foreground' : ''}
-              >
-                <Link to={item.path}>
+              <Link key={item.path} to={item.path}>
+                <Button
+                  variant={isActive(item.path) ? 'default' : 'ghost'}
+                  className={isActive(item.path) ? 'bg-primary text-primary-foreground' : ''}
+                >
                   {item.label}
-                </Link>
-              </Button>
+                </Button>
+              </Link>
             ))}
+            
+            {/* Admin link if user is admin */}
+            {profile?.role === 'admin' && (
+              <Link to="/admin">
+                <Button
+                  variant={isActive('/admin') ? 'default' : 'ghost'}
+                  className={isActive('/admin') ? 'bg-primary text-primary-foreground' : ''}
+                >
+                  <Shield className="mr-2 h-4 w-4" />
+                  Admin
+                </Button>
+              </Link>
+            )}
+            
+            {/* Login/Logout button */}
+            {user ? (
+              <Button variant="outline" onClick={signOut}>
+                <LogOut className="mr-2 h-4 w-4" />
+                Logout
+              </Button>
+            ) : (
+              <Link to="/login">
+                <Button variant="outline">
+                  <LogIn className="mr-2 h-4 w-4" />
+                  Login
+                </Button>
+              </Link>
+            )}
           </div>
 
           {/* Theme Toggle & Mobile Menu */}
@@ -203,19 +239,43 @@ export default function App() {
     <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
       <Router>
         <ScrollToTop />
-        <Layout>
+        <AuthProvider>
           <Routes>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/about" element={<AboutPage />} />
-            <Route path="/projects" element={<ProjectsPage />} />
-            <Route path="/projects/:slug" element={<ProjectDetailPage />} />
-            <Route path="/skills" element={<SkillsPage />} />
-            <Route path="/resume" element={<ResumePage />} />
-            <Route path="/contact" element={<ContactPage />} />
-            <Route path="/blog" element={<BlogPage />} />
-            <Route path="*" element={<NotFoundPage />} />
+            {/* Auth routes without Layout */}
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
+            
+            {/* Protected admin route */}
+            <Route
+              path="/admin"
+              element={
+                <ProtectedRoute requireAdmin>
+                  <AdminPage />
+                </ProtectedRoute>
+              }
+            />
+            
+            {/* Main routes with Layout */}
+            <Route
+              path="/*"
+              element={
+                <Layout>
+                  <Routes>
+                    <Route path="/" element={<HomePage />} />
+                    <Route path="/about" element={<AboutPage />} />
+                    <Route path="/projects" element={<ProjectsPage />} />
+                    <Route path="/projects/:slug" element={<ProjectDetailPage />} />
+                    <Route path="/skills" element={<SkillsPage />} />
+                    <Route path="/resume" element={<ResumePage />} />
+                    <Route path="/contact" element={<ContactPage />} />
+                    <Route path="/blog" element={<BlogPage />} />
+                    <Route path="*" element={<NotFoundPage />} />
+                  </Routes>
+                </Layout>
+              }
+            />
           </Routes>
-        </Layout>
+        </AuthProvider>
       </Router>
     </ThemeProvider>
   );
